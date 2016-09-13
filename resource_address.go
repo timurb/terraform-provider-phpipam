@@ -18,6 +18,8 @@ type AddressInformation struct {
   Ip        string
   Section   string
   Subnet    string
+  Broadcast string
+  BitMask   string
 }
 
 func resourcePhpIPAMAddress() *schema.Resource {
@@ -41,6 +43,14 @@ func resourcePhpIPAMAddress() *schema.Resource {
         Required: true,
       },
       "ip_address": &schema.Schema{
+        Type:     schema.TypeString,
+        Computed: true,
+      },
+      "broadcast": &schema.Schema{
+        Type:     schema.TypeString,
+        Computed: true,
+      },
+      "bitmask": &schema.Schema{
         Type:     schema.TypeString,
         Computed: true,
       },
@@ -105,7 +115,7 @@ func getAddressId(client *phpipam.Client, address string) (string, error) {
 }
 
 func getAddressInformation(client *phpipam.Client, addressId string) (*AddressInformation, error) {
-  var hostname, subnetId, subnet, sectionId, section, address string
+  var hostname, subnetId, subnet, sectionId, section, address, broadcast, bitmask string
   addressData, err := phpipam.GetAddress(client.ServerUrl, client.Application, addressId, client.Token)
   if err!=nil{
     return nil, err
@@ -124,6 +134,8 @@ func getAddressInformation(client *phpipam.Client, addressId string) (*AddressIn
   if subnetData.Code == 200 {
     subnet    = subnetData.Data.Description
     sectionId = subnetData.Data.SectionId
+    broadcast = subnetData.Data.Calculation.Broadcast
+    bitmask   = subnetData.Data.Calculation.BitMask
   } else {
     return nil, errors.New("Address Subnet Not Found")
   }
@@ -137,10 +149,12 @@ func getAddressInformation(client *phpipam.Client, addressId string) (*AddressIn
     return nil, errors.New("Subnet Section Not Found")
   }
   return &AddressInformation{
-    Hostname: hostname,
-    Ip:       address,
-    Section:  section,
-    Subnet:   subnet,
+    Hostname:   hostname,
+    Ip:         address,
+    Section:    section,
+    Subnet:     subnet,
+    Broadcast:  broadcast,
+    BitMask:    bitmask,
   }, nil
 }
 
@@ -261,6 +275,8 @@ func resourcePhpIPAMAddressRead(d *schema.ResourceData, m interface{}) error {
   d.Set("section", addressInformation.Section)
   d.Set("subnet", addressInformation.Subnet)
   d.Set("ip_address", addressInformation.Ip)
+  d.Set("broadcast", addressInformation.Broadcast)
+  d.Set("bitmask", addressInformation.BitMask)
   return nil
 }
 
