@@ -5,10 +5,13 @@ import (
   "log"
   "strconv"
   "errors"
+  "sync"
 
   "github.com/hashicorp/terraform/helper/schema"
   "github.com/peterbale/go-phpipam"
 )
+
+var addonLock sync.Mutex
 
 type AddressInformation struct {
   Hostname  string
@@ -182,6 +185,9 @@ func deleteExistingAddress(client *phpipam.Client, addressId string) (*phpipam.A
 }
 
 func create(client *phpipam.Client, section string, subnet string, hostname string, update bool) (string, error) {
+  addonLock.Lock()
+  defer addonLock.Unlock()
+
   var addressId string
   var err error
   sectionId, err := findSectionId(client, section)
