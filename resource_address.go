@@ -65,7 +65,7 @@ func resourcePhpIPAMAddress() *schema.Resource {
 
 func findSectionId(client *phpipam.Client, section string) (string, error) {
   var sectionId string
-  sections, err := phpipam.GetSections(client.ServerUrl, client.Application, client.Token)
+  sections, err := client.GetSections()
   if err!=nil{
     return sectionId, err
   }
@@ -82,7 +82,7 @@ func findSectionId(client *phpipam.Client, section string) (string, error) {
 
 func findSubnetId(client *phpipam.Client, sectionId string, subnet string) (string, error) {
   var subnetId string
-  subnets, err := phpipam.GetSectionsSubnets(client.ServerUrl, client.Application, sectionId, client.Token)
+  subnets, err := client.GetSectionsSubnets(sectionId)
   if err!=nil{
     return subnetId, err
   }
@@ -97,19 +97,19 @@ func findSubnetId(client *phpipam.Client, sectionId string, subnet string) (stri
   return subnetId, nil
 }
 
-func findExistingAddress(client *phpipam.Client, hostname string) ([]phpipam.AddressSearchData, int, error) {
+func findExistingAddress(client *phpipam.Client, hostname string) (phpipam.AddressSearch, int, error) {
   var totalFoundAddresses int
-  addresses, err := phpipam.GetAddressSearch(client.ServerUrl, client.Application, hostname, client.Token)
+  addresses, err := client.GetAddressSearch(hostname)
   if err!=nil{
-    return nil, totalFoundAddresses, err
+    return addresses, totalFoundAddresses, err
   }
   totalFoundAddresses = len(addresses.Data)
-  return addresses.Data, totalFoundAddresses, nil
+  return addresses, totalFoundAddresses, nil
 }
 
 func getAddressId(client *phpipam.Client, address string) (string, error) {
   var addressId string
-  addressSearchIp, err := phpipam.GetAddressSearchIp(client.ServerUrl, client.Application, address, client.Token)
+  addressSearchIp, err := client.GetAddressSearchIp(address)
   if err != nil {
     return addressId, err
   }
@@ -121,7 +121,7 @@ func getAddressId(client *phpipam.Client, address string) (string, error) {
 
 func getAddressInformation(client *phpipam.Client, addressId string) (*AddressInformation, error) {
   var hostname, subnetId, subnet, sectionId, section, address, broadcast, gateway, bitmask string
-  addressData, err := phpipam.GetAddress(client.ServerUrl, client.Application, addressId, client.Token)
+  addressData, err := client.GetAddress(addressId)
   if err!=nil{
     return nil, err
   }
@@ -132,7 +132,7 @@ func getAddressInformation(client *phpipam.Client, addressId string) (*AddressIn
   } else {
     return nil, nil
   }
-  subnetData, err := phpipam.GetSubnet(client.ServerUrl, client.Application, subnetId, client.Token)
+  subnetData, err := client.GetSubnet(subnetId)
   if err!=nil{
     return nil, err
   }
@@ -145,7 +145,7 @@ func getAddressInformation(client *phpipam.Client, addressId string) (*AddressIn
   } else {
     return nil, errors.New("Address Subnet Not Found")
   }
-  sectionData, err := phpipam.GetSection(client.ServerUrl, client.Application, sectionId, client.Token)
+  sectionData, err := client.GetSection(sectionId)
   if err!=nil{
     return nil, err
   }
@@ -167,7 +167,7 @@ func getAddressInformation(client *phpipam.Client, addressId string) (*AddressIn
 
 func checkAddressLive(client *phpipam.Client, addressId string) (int, error) {
   var pingStatusBool int
-  pingStatus, err := phpipam.GetAddressPing(client.ServerUrl, client.Application, addressId, client.Token)
+  pingStatus, err := client.GetAddressPing(addressId)
   if err!=nil{
     return pingStatusBool, err
   }
@@ -189,16 +189,16 @@ func checkAddressSubnet(existingSubnetId string, subnetId string) (int) {
   return subnetMatchBool
 }
 
-func allocateNewAddress(client *phpipam.Client, subnetId string, hostname string) (*phpipam.AddressFirstFree, error) {
-  newAddress, err := phpipam.CreateAddressFirstFree(client.ServerUrl, client.Application, subnetId, hostname, "terraform", client.Token)
+func allocateNewAddress(client *phpipam.Client, subnetId string, hostname string) (phpipam.AddressFirstFree, error) {
+  newAddress, err := client.CreateAddressFirstFree(subnetId, hostname, "terraform")
   if err!=nil{
     return newAddress, err
   }
   return newAddress, nil
 }
 
-func deleteExistingAddress(client *phpipam.Client, addressId string) (*phpipam.AddressDelete, error) {
-  deleteAddress, err := phpipam.DeleteAddress(client.ServerUrl, client.Application, addressId, client.Token)
+func deleteExistingAddress(client *phpipam.Client, addressId string) (phpipam.AddressDelete, error) {
+  deleteAddress, err := client.DeleteAddress(addressId)
   if err!=nil{
     return deleteAddress, err
   }
@@ -296,7 +296,7 @@ func resourcePhpIPAMAddressrUpdate(d *schema.ResourceData, m interface{}) error 
   addressId := d.Id()
   var err error
   if d.HasChange("hostname") {
-    _, err = phpipam.PatchUpdateAddress(client.ServerUrl, client.Application, hostname, addressId, client.Token)
+    _, err = client.PatchUpdateAddress(hostname, addressId,)
     if err != nil {
       return fmt.Errorf("Address Update Failed: %s", err)
     }
