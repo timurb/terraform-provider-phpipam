@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/peterbale/go-phpipam"
+	"github.com/timurb/go-phpipam"
 )
 
 var addonLock sync.Mutex

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/peterbale/go-phpipam"
+	"github.com/timurb/go-phpipam"
 )
 
 type Config struct {
