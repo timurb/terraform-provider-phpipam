@@ -171,7 +171,7 @@ func checkAddressLive(client *phpipam.Client, addressId string) (int, error) {
 	if err != nil {
 		return pingStatusBool, err
 	}
-	if pingStatus.Code == 200 {
+	if pingStatus.Data.ExitCode == 0 {
 		pingStatusBool = 1
 	} else {
 		pingStatusBool = 0
@@ -230,11 +230,11 @@ func create(client *phpipam.Client, section string, subnet string, hostname stri
 			return addressId, fmt.Errorf("Error Allocating New Address: %s", err)
 		}
 		log.Printf("[DEBUG] New Address IP: %#v", newAddress)
-		addressId, err = getAddressId(client, newAddress.Ip)
+		addressId, err = getAddressId(client, newAddress.Data)
 		if err != nil {
-			return addressId, fmt.Errorf("Error Getting Created Address ID: %s", newAddress.Ip)
+			return addressId, fmt.Errorf("Error Getting Created Address ID: %s", newAddress.Data)
 		}
-		log.Printf("[INFO] New Address Allocated: %s", newAddress.Ip)
+		log.Printf("[INFO] New Address Allocated: %s", newAddress.Data)
 	} else {
 		return addressId, fmt.Errorf("Error Address Already Allocated, Total Found Addresses: %s", strconv.Itoa(totalFoundAddresses))
 	}
